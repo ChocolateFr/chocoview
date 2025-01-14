@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Captioning</title>
+    <style>
+        body {
+            background: #121212;
+            color: #fff;
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            width: 80%;
+            max-width: 600px;
+            padding: 30px;
+            border-radius: 20px;
+            background: linear-gradient(145deg, #1e1e1e, #2a2a2a);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #76e3e0;
+            margin-bottom: 20px;
+        }
+        .upload-btn {
+            background: #76e3e0;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            color: #121212;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .upload-btn:hover {
+            background: #00b3b3;
+        }
+        .upload-input {
+            display: none;
+        }
+        .preview-img {
+            margin-top: 20px;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+            max-height: 300px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+            font-size: 1.5em;
+            color: #76e3e0;
+        }
+        .caption {
+            margin-top: 30px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #76e3e0;
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>AI Image Captioning</h1>
+    <button class="upload-btn" onclick="document.getElementById('uploadInput').click()">Upload Image</button>
+    <input id="uploadInput" type="file" class="upload-input" onchange="previewImage()">
+    <img id="previewImg" class="preview-img" alt="Preview">
+    <div id="loading" class="loading">Processing...</div>
+    <div id="caption" class="caption"></div>
+</div>
+
+<script>
+    let imageUrl = null;
+    let requestId = null;
+
+    function previewImage() {
+        const file = document.getElementById('uploadInput').files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('previewImg').style.display = 'block';
+                document.getElementById('previewImg').src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+            uploadImage(file);
+        }
+    }
+
+    function uploadImage(file) {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        // Show loading animation
+        document.getElementById('loading').style.display = 'block';
+
+        fetch('/caption', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            requestId = data.id;
+            checkResponse(requestId);
+        })
+        .catch(error => {
+            console.error('Error uploading image:', error);
+        });
+    }
+
+    function checkResponse(id) {
+        const interval = setInterval(() => {
+            fetch(`/response?id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.caption) {
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('caption').textContent = data.caption;
+                        document.getElementById('caption').style.opacity = 1;
+                        clearInterval(interval);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching caption:', error);
+                });
+        }, 2000); // Check every 2 seconds
+    }
+</script>
+
+</body>
+</html>
