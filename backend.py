@@ -26,8 +26,6 @@ def index():
 @app.route('/response', methods=['GET'])
 def response():
     request_id = request.args.get('id')
-    
-    # Simulate response generation
     if request_id in db:
         return jsonify({"caption":db[request_id]})
     return jsonify({"error": "Response is not ready."}), 400
